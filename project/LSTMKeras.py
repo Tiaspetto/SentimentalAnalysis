@@ -8,10 +8,7 @@ from keras.initializers import glorot_uniform
 np.random.seed(1)
 
 def sentences_to_indices(X, word_to_index, max_len):
-    """
-    Converts an array of sentences (strings) into an array of indices corresponding to words in the sentences.
-    The output shape should be such that it can be given to `Embedding()` (described in Figure 4). 
-    
+    """  
     Arguments:
     X -- array of sentences (strings), of shape (m, 1)
     word_to_index -- a dictionary containing the each word mapped to its index
@@ -29,6 +26,8 @@ def sentences_to_indices(X, word_to_index, max_len):
     for i in range(m):                               # loop over training examples
         
         sentence_words =X[i].lower().split()
+        if len(sentence_words)>32:
+            print(len(sentence_words))
         
         j = 0
         
@@ -37,7 +36,7 @@ def sentences_to_indices(X, word_to_index, max_len):
             if w in word_to_index:
                 X_indices[i, j] = word_to_index[w]
             else:
-            	 X_indices = np.zeros((m, max_len))
+            	X_indices[i, j] = 0
             # Increment j to j + 1
             j = j + 1
             
@@ -64,7 +63,8 @@ def pretrained_embedding_layer(word_to_vec_map, word_to_index):
     
     # Set each row "index" of the embedding matrix to be the word vector representation of the "index"th word of the vocabulary
     for word, index in word_to_index.items():
-        emb_matrix[index, :] =  word_to_vec_map[word]
+        if len(word_to_vec_map[word]) == 50:
+            emb_matrix[index, :] =  word_to_vec_map[word]
 
     # Define Keras embedding layer with the correct output/input sizes, make it trainable. Use Embedding(...). Make sure to set trainable=False. 
     embedding_layer = Embedding(vocab_len, emb_dim, trainable=False)
@@ -110,7 +110,7 @@ def LSTMKeras_model(input_shape, word_to_vec_map, word_to_index):
     X = LSTM(128, return_sequences=False)(X)
     # Add dropout with a probability of 0.5
     X = Dropout(0.5)(X)
-    # Propagate X through a Dense layer with softmax activation to get back a batch of 5-dimensional vectors.
+    # Propagate X through a Dense layer with softmax activation to get back a batch of 3-dimensional vectors.
     X =  Dense(3)(X)
     # Add a softmax activation
     X = Activation('softmax')(X)

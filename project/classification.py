@@ -10,24 +10,22 @@ import numpy as np
 from sentence_label import *
 from LSTMKeras import *
 import gensim
+from keras.models import load_model
 # TODO: load training data
 """
 unigram
 """
+maxLen = 0
+dev_path = "semeval-tweets/twitter-dev-data.txt"
 train_path = "semeval-tweets/twitter-training-data.txt"
-test_path = "semeval-tweets/twitter-test1.txt"
+test_path = "semeval-tweets/"
 if not os.path.exists("cache/train_data_uni.txt") or not os.path.exists("cache/train_label_uni.txt"):
     tweet_preprocessing_train_unigram(train_path, 140)
 
-if not os.path.exists("cache/test_data_uni.txt") or not os.path.exists("cache/test_label_uni.txt"):
-    if not os.path.exists("cache/word2ids.dat"):
-        tweet_preprocessing_train_unigram(train_path, 140)
-
-    word2ids = pickle.load(open("cache/word2ids.dat", "rb"))
-    tweet_preprocessing_test_unigram(test_path, 140, word2ids)
+word_to_index, index_to_word, word_to_vec_map = read_glove_vecs('semeval-tweets/glove.twitter.27B.50d.txt')
 
 # You may rename the names of the classifiers to something more descriptive
-for classifier in ['', '', 'myclassifier3']:
+for classifier in ['', 'myclassifier2', 'myclassifier3']:
     if classifier == 'myclassifier1':
         print('Training ' + classifier)
         x_train_matrix = np.load("cache/train_data_uni.txt")
@@ -38,51 +36,111 @@ for classifier in ['', '', 'myclassifier3']:
 
         parameters = pickle.load(open("cache/plain_model.dat", "rb"))
         NN_predict(x_train_matrix.T, y_train_matrix.T, parameters)
+        
 
-    # elif classifier == 'myclassifier2':
-        # if not os.path.exists("cache/soft_x.txt") or not os.path.exists("cache/soft_y.txt"):
-        #     tweet_textarray_preprocessing(train_path)
-        # X_train = np.load("cache/soft_x.txt")
-        # Y_train = np.load("cache/soft_y.txt")
-        # maxLen = len(max(X_train, key=len).split())
-        # Y_oh_train = convert_to_one_hot(Y_train, C = 3)
-        # word_to_index, index_to_word, word_to_vec_map = read_glove_vecs('datasets/glove.6B.50d.txt')
-        # print(word_to_vec_map['hi'])
-    
-        # if not os.path.exists("cache/softmax_W.dat") or not os.path.exists("cache/softmax_b.dat"):
-        #     pred, W, b = model(X_train, Y_train, word_to_vec_map)
-        #     pickle.dump(W, open("cache/softmax_W.dat", "wb"))
-        #     pickle.dump(b, open("cache/softmax_b.dat", "wb"))
+        word2ids = pickle.load(open("cache/word2ids.dat", "rb"))
+        x_dev_matrix, y_dev_matrix = dev_tweet_preprocessing_train_unigram(dev_path, 140, word2ids)
+        if not os.path.exists("cache/dev_plain_model.dat"):
+            parameters = Dev_L_layer_model(x_dev_matrix.T, y_dev_matrix.T, [140,40,20,7,3],parameters)
+            pickle.dump(parameters, open("cache/dev_plain_model.dat", "wb"))
+        print("Dev_plain_model:")
+        parameters = pickle.load(open("cache/dev_plain_model.dat", "rb"))
+        NN_predict(x_dev_matrix.T, y_dev_matrix.T, parameters)
 
-        # W =  pickle.load(open("cache/softmax_W.dat", "rb"))  
-        # b =  pickle.load(open("cache/softmax_b.dat", "rb"))
-        # pred_train = predict(X_train, Y_train, W, b, word_to_vec_map)
-    elif classifier == 'myclassifier3':
-        print('Training ' + classifier)
+
+    elif classifier == 'myclassifier2':
         if not os.path.exists("cache/soft_x.txt") or not os.path.exists("cache/soft_y.txt"):
             tweet_textarray_preprocessing(train_path)
         X_train = np.load("cache/soft_x.txt")
         Y_train = np.load("cache/soft_y.txt")
-        token_set = pickle.load(open("cache/token_set.dat", "rb"))
+        maxLen = len(max(X_train, key=len).split())+1
+        Y_oh_train = convert_to_one_hot(Y_train, C = 3)
+    
+        if not os.path.exists("cache/softmax_W.dat") or not os.path.exists("cache/softmax_b.dat"):
+            pred, W, b = model(X_train, Y_train, word_to_vec_map)
+            pickle.dump(W, open("cache/softmax_W.dat", "wb"))
+            pickle.dump(b, open("cache/softmax_b.dat", "wb"))
 
-        # #X_train, Y_train = read_csv()
-        # maxLen = len(max(X_train, key=len).split())
-        # Y_train_oh = convert_to_one_hot(Y_train, C = 3)
-        # word_to_index, index_to_word = index_word_mapping(token_set)
-        # word_to_vec_map = gensim.models.Word2Vec.load('cache/embedding')
-        # print(word_to_vec_map["zquadwantszayntosmile"])
-        #model = LSTMKeras_model((maxLen,), word_to_vec_map, word_to_index)
-        # model.summary()
-        # model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-        # X_train_indices = sentences_to_indices(X_train, word_to_index, maxLen)
-        # model.fit(X_train_indices, Y_train_oh, epochs = 8, batch_size = 16, shuffle=True)
-        # pickle.dump(model, open("cache/LSTMKeras.dat", "wb"))
+        W =  pickle.load(open("cache/softmax_W.dat", "rb"))  
+        b =  pickle.load(open("cache/softmax_b.dat", "rb"))
+        pred_train = predict(X_train, Y_train, W, b, word_to_vec_map)
 
-    # # for testset in testsets.testsets:
-    #     # TODO: classify tweets in test set
+    elif classifier == 'myclassifier3':
+        if not os.path.exists("cache/soft_x.txt") or not os.path.exists("cache/soft_y.txt"):
+            tweet_textarray_preprocessing(train_path)
+        X_train = np.load("cache/soft_x.txt")
+        Y_train = np.load("cache/soft_y.txt")
 
-    #     predictions = {'163361196206957578': 'neutral', '768006053969268950': 'neutral', '742616104384772304': 'neutral', '102313285628711403': 'neutral',
-    #                    '653274888624828198': 'neutral'}  # TODO: Remove this line, 'predictions' should be populated with the outputs of your classifier
-    #     evaluation.evaluate(predictions, testset, classifier)
+        #X_train, Y_train = read_csv()
+        maxLen = len(max(X_train, key=len).split())+1
+        print(maxLen)
+        if not os.path.exists("cache/LSTMKeras.dat"):
+            Y_train_oh = convert_to_one_hot(Y_train, C = 3)
+            model = LSTMKeras_model((maxLen,), word_to_vec_map, word_to_index)
+            model.summary()
+            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            X_train_indices = sentences_to_indices(X_train, word_to_index, maxLen)
+            model.fit(X_train_indices, Y_train_oh, epochs = 20, batch_size = 32, shuffle=True)
+            model.save("cache/LSTMKeras.dat")
+        print("LSTMKeras is a huge model, so if you have already load trained model, the predictions on training set will not be shown\n")
 
-    #     evaluation.confusion(predictions, testset, classifier)
+    for testset in testsets.testsets:
+        sub_test_path = test_path + testset
+        if classifier == 'myclassifier1':
+            word2ids = pickle.load(open("cache/word2ids.dat", "rb"))
+            index_set = tweet_preprocessing_test_unigram(sub_test_path, 140, word2ids)
+            x_test_matrix = np.load("cache/test_data_uni.txt")
+            y_test_matrix = np.load("cache/test_label_uni.txt")
+            parameters = pickle.load(open("cache/plain_model.dat", "rb"))
+            predicted_label = NN_predict(x_test_matrix.T, y_test_matrix.T, parameters)
+            predictions = {}
+            for i in range(len(index_set)):
+                if predicted_label[i][0] == 1:
+                    print("negative")
+                    predictions[index_set[i]] = 'negative'
+                elif predicted_label[i][1] == 1:
+                    predictions[index_set[i]] = 'neutral'
+                elif predicted_label[i][2] == 1:
+                    predictions[index_set[i]] = 'positive'
+            evaluation.evaluate(predictions, sub_test_path, classifier)
+            evaluation.confusion(predictions, sub_test_path, classifier)
+
+        if classifier == 'myclassifier2':
+            W =  pickle.load(open("cache/softmax_W.dat", "rb"))  
+            b =  pickle.load(open("cache/softmax_b.dat", "rb"))
+            index_set, X_test, Y_test = test_tweet_textarray_preprocessing(sub_test_path)
+            pred_train = predict(X_train, Y_train, W, b, word_to_vec_map)
+            predictions = {}
+            for i in range(len(index_set)):
+                if pred_train[i] == 0:
+                    predictions[index_set[i]] = 'negative'
+                elif pred_train[i] == 1:
+                    predictions[index_set[i]] = 'neutral'
+                elif pred_train[i] == 2:
+                    predictions[index_set[i]] = 'positive'
+
+            evaluation.evaluate(predictions, sub_test_path, classifier)
+            evaluation.confusion(predictions, sub_test_path, classifier)
+
+        if classifier == "myclassifier3":
+            model = load_model("cache/LSTMKeras.dat")
+            index_set, X_test, Y_test = test_tweet_textarray_preprocessing(sub_test_path)
+            X_test_indices = sentences_to_indices(X_test, word_to_index, max_len = maxLen)
+            Y_test_oh = convert_to_one_hot(Y_test, C = 3)
+            loss, acc = model.evaluate(X_test_indices, Y_test_oh)
+            pred = model.predict(X_test_indices)
+            predictions = {}
+            print(acc)
+            for i in range(len(index_set)):
+                 num = np.argmax(pred[i])
+                 if num == 0:
+                     predictions[index_set[i]] = 'negative'
+                 elif num == 1:
+                     predictions[index_set[i]] = 'neutral'
+                 elif num == 2:
+                     predictions[index_set[i]] = 'positive'
+
+            evaluation.evaluate(predictions, sub_test_path, classifier)
+            evaluation.confusion(predictions, sub_test_path, classifier)
+
+    

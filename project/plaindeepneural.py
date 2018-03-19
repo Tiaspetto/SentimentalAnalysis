@@ -344,7 +344,50 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 30
         if print_cost and i % 100 == 0:
             costs.append(cost)
 
-        if i%100 == 0 and i>100 and abs(costs[int(i/100)-1] - cost) <= 0.0001: #Avoid overfitting
+        if i%100 == 0 and i>100 and abs(costs[int(i/100)-1] - cost) <= 0.001: #Avoid overfitting
+            break
+            
+    # plot the cost
+    plt.plot(np.squeeze(costs))
+    plt.ylabel('cost')
+    plt.xlabel('iterations (per tens)')
+    plt.title("Learning rate =" + str(learning_rate))
+    plt.show()
+    
+    return parameters
+def Dev_L_layer_model(X, Y, layers_dims, parameters, learning_rate = 0.0075, num_iterations = 3000, print_cost=True):#lr was 0.009
+    """
+    Implements a L-layer neural network: [LINEAR->RELU]*(L-1)->LINEAR->SIGMOID.
+    
+    Arguments:
+    X -- data, numpy array of shape (number of examples, num_px * num_px * 3)
+    Y -- true "label" vector (containing 0 if cat, 1 if non-cat), of shape (1, number of examples)
+    layers_dims -- list containing the input size and each layer size, of length (number of layers + 1).
+    learning_rate -- learning rate of the gradient descent update rule
+    num_iterations -- number of iterations of the optimization loop
+    print_cost -- if True, it prints the cost every 100 steps
+    
+    Returns:
+    parameters -- parameters learnt by the model. They can then be used to predict.
+    """
+
+    np.random.seed(1)
+    costs = []                         # keep track of cost
+    
+    for i in range(0, num_iterations):
+
+
+        AL, caches = L_model_forward(X, parameters)
+        cost = compute_cost(AL, Y)
+        grads = L_model_backward(AL, Y, caches)
+        parameters = update_parameters(parameters, grads, learning_rate=learning_rate)
+
+        #if print_cost and i % 100 == 0:
+            #print ("Cost after iteration %i: %f" %(i, cost))
+        if print_cost and i % 100 == 0:
+            costs.append(cost)
+
+        if i%100 == 0 and i>100 and abs(costs[int(i/100)-1] - cost) <= 0.001: #Avoid overfitting
             break
             
     # plot the cost
@@ -385,6 +428,7 @@ def NN_predict(X, y, parameters):
             if temp_prob[k] > max_prob:
                 max_prob = temp_prob[k]
                 index = k
+
         if index == 0:
         	predic.append([1,0,0])
         elif index == 1:
