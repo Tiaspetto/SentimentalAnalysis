@@ -56,9 +56,10 @@ word2_match = re.compile(r'(?:[\w_]+)', re.VERBOSE | re.IGNORECASE)
 word3_match = re.compile(r"(?:[a-z][a-z'\-_]+[a-z])", re.VERBOSE | re.IGNORECASE)
 
 
-stopwords = [':', '?', '!', '"', '-', "'", '."', ';',
+punctuation = [':', '?', '!', '"', '-', "'", '."', ';',
         '.', ',', '(', ')', '&', '@', '#', '%']
 
+stopwords = StopwordsLoader.words() + punctuation
 
 def token_reduce(token):
     return elongated_match.sub(r"\1\1", token)
@@ -88,9 +89,9 @@ def tweet_preprocessing(tw_text):
     return tokens
 
 def tweet_textarray_preprocessing(file_path):
-    a=0
-    b=0
-    c=0
+    a = 0
+    b = 0
+    c = 0
     print("Start preprocessing plz waite few minute")
     set_file = open(file_path, "r", encoding='UTF-8')
     phrase = []
@@ -102,7 +103,7 @@ def tweet_textarray_preprocessing(file_path):
         tw_text = line_data[2]
         tokens = tweet_tokenize(tw_text)
         tokens = [token if emotion_match.search(token) else token.lower() for token in tokens]
-        tokens = [token for token in tokens if token not in stopwords and not (num_match.search(token)) and not (emotion_match.search(token))]
+        tokens = [token for token in tokens if token not in punctuation and not (num_match.search(token)) and not (emotion_match.search(token))]
 
         for i in range(len(tokens)):
             if mnt_match.search(tokens[i]):
@@ -135,14 +136,12 @@ def tweet_textarray_preprocessing(file_path):
                 if c<=8326:
                     c+=1
                     phrase.append(tw_text)
-                    labels.append(2)
-
-            X = np.asarray(phrase)
-            Y = np.asarray(labels, dtype=int)
-            
-            t+=1
-            if t % 100 == 0:
-                print("already processed lines:", t)
+                    labels.append(2)            
+        t+=1
+        if t % 100 == 0:
+            print("already processed lines:", t)
+    X = np.asarray(phrase)
+    Y = np.asarray(labels, dtype=int)
     print("preprocessing end:", a, b, c )
     X.dump("cache/soft_x.txt")
     Y.dump("cache/soft_y.txt")
@@ -161,7 +160,7 @@ def test_tweet_textarray_preprocessing(file_path):
         tw_text = line_data[2]
         tokens = tweet_tokenize(tw_text)
         tokens = [token if emotion_match.search(token) else token.lower() for token in tokens]
-        tokens = [token for token in tokens if token not in stopwords and not (num_match.search(token)) and not (emotion_match.search(token))]
+        tokens = [token for token in tokens if token not in punctuation and not (num_match.search(token)) and not (emotion_match.search(token))]
 
         for i in range(len(tokens)):
             if mnt_match.search(tokens[i]):
@@ -189,19 +188,19 @@ def test_tweet_textarray_preprocessing(file_path):
                 labels.append(1)
             elif label == "positive":
                 labels.append(2)
-
-            X = np.asarray(phrase)
-            Y = np.asarray(labels, dtype=int)
             
             t+=1
-            # if t % 100 == 0:
-            #     print("already processed lines:", t)
+    X = np.asarray(phrase)
+    Y = np.asarray(labels, dtype=int)
     print("preprocessing end")
     return index_set, X, Y
 
 
 
 def tweet_preprocessing_train_unigram(file_path, feature_len):
+    a = 0
+    b = 0
+    c = 0
     token_set = []
     training_set_tokens = []
     training_set_ids = []
@@ -216,15 +215,24 @@ def tweet_preprocessing_train_unigram(file_path, feature_len):
         tw_text = line_data[2]
         row_tokens = tweet_preprocessing(tw_text)
         token_set.extend(row_tokens)
-        training_set_tokens.append(row_tokens)
         y = [0, 0, 0]
         if label == "negative":
+            a+=1
             y = [1, 0, 0]
+            training_set_tokens.append(row_tokens)
+            training_set_labels.append(y)
         elif label == "neutral":
-            y = [0, 1, 0]
+            if b <= 8236:
+                b+=1
+                y = [0, 1, 0]
+                training_set_tokens.append(row_tokens)
+                training_set_labels.append(y)
         elif label == "positive":
-            y = [0, 0, 1]
-        training_set_labels.append(y)
+            if c <= 8236:
+                c+=1
+                y = [0, 0, 1]
+                training_set_tokens.append(row_tokens)
+                training_set_labels.append(y)
     token_set = list(set(token_set))
 
     word2ids = {}
@@ -335,6 +343,161 @@ def tweet_preprocessing_test_unigram(file_path, feature_len, word2ids):
 
     x_test_matrix.dump("cache/test_data_uni.txt")
     y_test_matrix.dump("cache/test_label_uni.txt")
+
+    return index_set
+
+"""
+Bigram
+"""
+def tweet_preprocessing_train_bigram(file_path, feature_len):
+    a = 0
+    b = 0
+    c = 0
+    bigram_set = []
+    training_set_bigram = []
+    training_set_ids = []
+    training_set_labels = []
+
+    training_set_file = open(file_path, "r", encoding='UTF-8')
+
+    print("Preporcessing Twitter data, please waite few minute")
+    for line in training_set_file:
+        line_data = line.split('\t')
+        label = line_data[1]
+        tw_text = line_data[2]
+        row_tokens = tweet_preprocessing(tw_text)
+        row_bigram = bigrams(row_tokens)
+        bigram_set.extend(row_bigram)
+        y = [0, 0, 0]
+        if label == "negative":
+            a+=1
+            y = [1, 0, 0]
+            training_set_bigram.append(row_bigram)
+            training_set_labels.append(y)
+        elif label == "neutral":
+            if b <= 8236:
+                b+=1
+                y = [0, 1, 0]
+                training_set_bigram.append(row_bigram)
+                training_set_labels.append(y)
+        elif label == "positive":
+            if c <= 8236:
+                c+=1
+                y = [0, 0, 1]
+                training_set_bigram.append(row_bigram)
+                training_set_labels.append(y)
+    bigram_set = list(set(bigram_set))
+
+    bigram2ids = {}
+    for index, bigram in enumerate(bigram_set):
+        bigram2ids[bigram] = index + 1
+
+    for row in training_set_bigram:
+        x = np.zeros(feature_len)
+        for ix, bigram in enumerate(row):
+            if (ix >= feature_len):
+                break
+            x[ix] = bigram2ids[bigram]
+        training_set_ids.append(x)
+
+    x_train_matrix = np.array(training_set_ids)/len(bigram_set)
+    y_train_matrix = np.array(training_set_labels)
+
+    x_train_matrix.dump("cache/train_data_bi.txt")
+    y_train_matrix.dump("cache/train_label_bi.txt")
+
+    pickle.dump(bigram2ids, open("cache/bigram2ids.dat", "wb"))
+
+def dev_tweet_preprocessing_train_bigram(file_path, feature_len, bigram2ids):
+    bigram_set = []
+    training_set_bigram = []
+    training_set_ids = []
+    training_set_labels = []
+
+    training_set_file = open(file_path, "r", encoding='UTF-8')
+
+    print("Preporcessing Twitter data, please waite few minute")
+    for line in training_set_file:
+        line_data = line.split('\t')
+        label = line_data[1]
+        tw_text = line_data[2]
+        row_tokens = tweet_preprocessing(tw_text)
+        row_bigram = bigrams(row_tokens)
+        bigram_set.extend(row_bigram)
+        training_set_bigram.append(row_bigram)
+        y = [0, 0, 0]
+        if label == "negative":
+            y = [1, 0, 0]
+        elif label == "neutral":
+            y = [0, 1, 0]
+        elif label == "positive":
+            y = [0, 0, 1]
+        training_set_labels.append(y)
+
+    bigram_set = list(set(bigram_set))
+
+    for index, bigram in enumerate(bigram_set):
+        if bigram not in bigram2ids:
+            bigram2ids[bigram] = index + 1
+
+    for row in training_set_bigram:
+        x = np.zeros(feature_len)
+        for ix, bigram in enumerate(row):
+            if (ix >= feature_len):
+                break
+            x[ix] = bigram2ids[bigram]
+        training_set_ids.append(x)
+
+    x_train_matrix = np.array(training_set_ids)/len(bigram2ids)
+    y_train_matrix = np.array(training_set_labels)
+
+    pickle.dump(bigram2ids, open("cache/bigram2ids.dat", "wb"))
+
+    return x_train_matrix, y_train_matrix
+
+
+def tweet_preprocessing_test_bigram(file_path, feature_len, bigram2ids):
+    print("Preporcessing test Twitter data, please waite few minute...")
+    test_set_file = open(file_path, "r", encoding='UTF-8')
+
+    test_set_bigram = []
+    test_set_ids = []
+    test_set_labels = []
+    
+    index_set = []
+    for line in test_set_file:
+        line_data = line.split('\t')
+        label = line_data[1]
+        tw_text = line_data[2]
+        index_set.append(line_data[0])
+        row_tokens = tweet_preprocessing(tw_text)
+        row_bigram = bigrams(row_tokens)
+        test_set_bigram.append(row_bigram)
+        y = [0, 0, 0]
+        if label == "negative":
+            y = [1, 0, 0]
+        elif label == "neutral":
+            y = [0, 1, 0]
+        elif label == "positive":
+            y = [0, 0, 1]
+        test_set_labels.append(y)
+
+    for row in test_set_bigram:
+        x = np.zeros(feature_len)
+        for ix, bigram in enumerate(row):
+            if (ix >= feature_len):
+                break
+            if bigram in bigram2ids:
+                x[ix] = bigram2ids[bigram]
+            else:
+                x[ix] = 0
+        test_set_ids.append(x)
+
+    x_test_matrix = np.array(test_set_ids)/len(bigram2ids)
+    y_test_matrix = np.array(test_set_labels)
+
+    x_test_matrix.dump("cache/test_data_bi.txt")
+    y_test_matrix.dump("cache/test_label_bi.txt")
 
     return index_set
 
