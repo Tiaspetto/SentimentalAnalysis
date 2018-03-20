@@ -196,309 +196,183 @@ def test_tweet_textarray_preprocessing(file_path):
     return index_set, X, Y
 
 
-
-def tweet_preprocessing_train_unigram(file_path, feature_len):
-    a = 0
-    b = 0
-    c = 0
-    token_set = []
-    training_set_tokens = []
-    training_set_ids = []
-    training_set_labels = []
-
+def tweet_word2prob(file_path):
     training_set_file = open(file_path, "r", encoding='UTF-8')
-
-    print("Preporcessing Twitter data, please waite few minute")
+    word2prob = {}
+    negative = 0
+    neutral  = 0
+    positive = 0
     for line in training_set_file:
         line_data = line.split('\t')
         label = line_data[1]
         tw_text = line_data[2]
         row_tokens = tweet_preprocessing(tw_text)
-        token_set.extend(row_tokens)
-        y = [0, 0, 0]
-        if label == "negative":
-            a+=1
-            y = [1, 0, 0]
-            training_set_tokens.append(row_tokens)
-            training_set_labels.append(y)
-        elif label == "neutral":
-            if b <= 8236:
-                b+=1
-                y = [0, 1, 0]
-                training_set_tokens.append(row_tokens)
-                training_set_labels.append(y)
-        elif label == "positive":
-            if c <= 8236:
-                c+=1
-                y = [0, 0, 1]
-                training_set_tokens.append(row_tokens)
-                training_set_labels.append(y)
-    token_set = list(set(token_set))
-
-    word2ids = {}
-    for index, word in enumerate(token_set):
-        word2ids[word] = index + 1
-
-    for row in training_set_tokens:
-        x = np.zeros(feature_len)
-        for ix, word in enumerate(row):
-            if (ix >= feature_len):
-                break
-            x[ix] = word2ids[word]
-        training_set_ids.append(x)
-
-    x_train_matrix = np.array(training_set_ids)/len(token_set)
-    y_train_matrix = np.array(training_set_labels)
-
-    x_train_matrix.dump("cache/train_data_uni.txt")
-    y_train_matrix.dump("cache/train_label_uni.txt")
-
-    pickle.dump(word2ids, open("cache/word2ids.dat", "wb"))
-
-def dev_tweet_preprocessing_train_unigram(file_path, feature_len, word2ids):
-    token_set = []
-    training_set_tokens = []
-    training_set_ids = []
-    training_set_labels = []
-
-    training_set_file = open(file_path, "r", encoding='UTF-8')
-
-    print("Preporcessing Twitter data, please waite few minute")
-    for line in training_set_file:
-        line_data = line.split('\t')
-        label = line_data[1]
-        tw_text = line_data[2]
-        row_tokens = tweet_preprocessing(tw_text)
-        token_set.extend(row_tokens)
-        training_set_tokens.append(row_tokens)
-        y = [0, 0, 0]
-        if label == "negative":
-            y = [1, 0, 0]
-        elif label == "neutral":
-            y = [0, 1, 0]
-        elif label == "positive":
-            y = [0, 0, 1]
-        training_set_labels.append(y)
-
-    token_set = list(set(token_set))
-
-    for index, word in enumerate(token_set):
-        if word not in word2ids:
-            word2ids[word] = index + 1
-
-    for row in training_set_tokens:
-        x = np.zeros(feature_len)
-        for ix, word in enumerate(row):
-            if (ix >= feature_len):
-                break
-            x[ix] = word2ids[word]
-        training_set_ids.append(x)
-
-    x_train_matrix = np.array(training_set_ids)/len(word2ids)
-    y_train_matrix = np.array(training_set_labels)
-
-    pickle.dump(word2ids, open("cache/word2ids.dat", "wb"))
-
-    return x_train_matrix, y_train_matrix
-
-
-def tweet_preprocessing_test_unigram(file_path, feature_len, word2ids):
-    print("Preporcessing test Twitter data, please waite few minute...")
-    test_set_file = open(file_path, "r", encoding='UTF-8')
-
-    test_set_tokens = []
-    test_set_ids = []
-    test_set_labels = []
-    
-    index_set = []
-    for line in test_set_file:
-        line_data = line.split('\t')
-        label = line_data[1]
-        tw_text = line_data[2]
-        index_set.append(line_data[0])
-        row_tokens = tweet_preprocessing(tw_text)
-        test_set_tokens.append(row_tokens)
-        y = [0, 0, 0]
-        if label == "negative":
-            y = [1, 0, 0]
-        elif label == "neutral":
-            y = [0, 1, 0]
-        elif label == "positive":
-            y = [0, 0, 1]
-        test_set_labels.append(y)
-
-    for row in test_set_tokens:
-        x = np.zeros(feature_len)
-        for ix, word in enumerate(row):
-            if (ix >= feature_len):
-                break
-            if word in word2ids:
-                x[ix] = word2ids[word]
+        for token in row_tokens:
+            if token in word2prob:
+                if label == "negative":
+                    word2prob[token][0] += 1
+                    negative += 1
+                elif label == "neutral":
+                    word2prob[token][1] += 1
+                    neutral += 1
+                elif label == "positive":
+                    word2prob[token][2] += 1
+                    positive += 1
             else:
-                x[ix] = 0
-        test_set_ids.append(x)
-
-    x_test_matrix = np.array(test_set_ids)/len(word2ids)
-    y_test_matrix = np.array(test_set_labels)
-
-    x_test_matrix.dump("cache/test_data_uni.txt")
-    y_test_matrix.dump("cache/test_label_uni.txt")
-
-    return index_set
-
-"""
-Bigram
-"""
-def tweet_preprocessing_train_bigram(file_path, feature_len):
-    a = 0
-    b = 0
-    c = 0
-    bigram_set = []
-    training_set_bigram = []
-    training_set_ids = []
-    training_set_labels = []
-
-    training_set_file = open(file_path, "r", encoding='UTF-8')
-
-    print("Preporcessing Twitter data, please waite few minute")
-    for line in training_set_file:
-        line_data = line.split('\t')
-        label = line_data[1]
-        tw_text = line_data[2]
-        row_tokens = tweet_preprocessing(tw_text)
-        row_bigram = bigrams(row_tokens)
-        bigram_set.extend(row_bigram)
-        y = [0, 0, 0]
-        if label == "negative":
-            a+=1
-            y = [1, 0, 0]
-            training_set_bigram.append(row_bigram)
-            training_set_labels.append(y)
-        elif label == "neutral":
-            if b <= 8236:
-                b+=1
-                y = [0, 1, 0]
-                training_set_bigram.append(row_bigram)
-                training_set_labels.append(y)
-        elif label == "positive":
-            if c <= 8236:
-                c+=1
-                y = [0, 0, 1]
-                training_set_bigram.append(row_bigram)
-                training_set_labels.append(y)
-    bigram_set = list(set(bigram_set))
-
-    bigram2ids = {}
-    for index, bigram in enumerate(bigram_set):
-        bigram2ids[bigram] = index + 1
-
-    for row in training_set_bigram:
-        x = np.zeros(feature_len)
-        for ix, bigram in enumerate(row):
-            if (ix >= feature_len):
-                break
-            x[ix] = bigram2ids[bigram]
-        training_set_ids.append(x)
-
-    x_train_matrix = np.array(training_set_ids)/len(bigram_set)
-    y_train_matrix = np.array(training_set_labels)
-
-    x_train_matrix.dump("cache/train_data_bi.txt")
-    y_train_matrix.dump("cache/train_label_bi.txt")
-
-    pickle.dump(bigram2ids, open("cache/bigram2ids.dat", "wb"))
-
-def dev_tweet_preprocessing_train_bigram(file_path, feature_len, bigram2ids):
-    bigram_set = []
-    training_set_bigram = []
-    training_set_ids = []
-    training_set_labels = []
-
-    training_set_file = open(file_path, "r", encoding='UTF-8')
-
-    print("Preporcessing Twitter data, please waite few minute")
-    for line in training_set_file:
-        line_data = line.split('\t')
-        label = line_data[1]
-        tw_text = line_data[2]
-        row_tokens = tweet_preprocessing(tw_text)
-        row_bigram = bigrams(row_tokens)
-        bigram_set.extend(row_bigram)
-        training_set_bigram.append(row_bigram)
-        y = [0, 0, 0]
-        if label == "negative":
-            y = [1, 0, 0]
-        elif label == "neutral":
-            y = [0, 1, 0]
-        elif label == "positive":
-            y = [0, 0, 1]
-        training_set_labels.append(y)
-
-    bigram_set = list(set(bigram_set))
-
-    for index, bigram in enumerate(bigram_set):
-        if bigram not in bigram2ids:
-            bigram2ids[bigram] = index + 1
-
-    for row in training_set_bigram:
-        x = np.zeros(feature_len)
-        for ix, bigram in enumerate(row):
-            if (ix >= feature_len):
-                break
-            x[ix] = bigram2ids[bigram]
-        training_set_ids.append(x)
-
-    x_train_matrix = np.array(training_set_ids)/len(bigram2ids)
-    y_train_matrix = np.array(training_set_labels)
-
-    pickle.dump(bigram2ids, open("cache/bigram2ids.dat", "wb"))
-
-    return x_train_matrix, y_train_matrix
-
-
-def tweet_preprocessing_test_bigram(file_path, feature_len, bigram2ids):
-    print("Preporcessing test Twitter data, please waite few minute...")
-    test_set_file = open(file_path, "r", encoding='UTF-8')
-
-    test_set_bigram = []
-    test_set_ids = []
-    test_set_labels = []
+                if label == "negative":
+                    word2prob[token] = np.array([1,0,0])
+                    negative += 1
+                elif label == "neutral":
+                    word2prob[token] = np.array([0,1,0])
+                    neutral += 1
+                elif label == "positive":
+                    word2prob[token] = np.array([0,0,1])
+                    positive += 1
     
-    index_set = []
-    for line in test_set_file:
+    class_freqency = np.array([negative,neutral,positive])
+
+    for word, probs in word2prob.items():
+        if sum(probs) != 0:
+            word2prob[word] = word2prob[word]/class_freqency
+            word2prob[word] = word2prob[word]/sum(word2prob[word])
+    
+    pickle.dump(word2prob, open("cache/word2prob.dat", "wb"))
+    return word2prob
+
+def tweet_bigram2prob(file_path):
+    training_set_file = open(file_path, "r", encoding='UTF-8')
+    bigram2prob = {}
+    negative = 0
+    neutral  = 0
+    positive = 0
+    for line in training_set_file:
         line_data = line.split('\t')
         label = line_data[1]
         tw_text = line_data[2]
-        index_set.append(line_data[0])
         row_tokens = tweet_preprocessing(tw_text)
         row_bigram = bigrams(row_tokens)
-        test_set_bigram.append(row_bigram)
-        y = [0, 0, 0]
-        if label == "negative":
-            y = [1, 0, 0]
-        elif label == "neutral":
-            y = [0, 1, 0]
-        elif label == "positive":
-            y = [0, 0, 1]
-        test_set_labels.append(y)
-
-    for row in test_set_bigram:
-        x = np.zeros(feature_len)
-        for ix, bigram in enumerate(row):
-            if (ix >= feature_len):
-                break
-            if bigram in bigram2ids:
-                x[ix] = bigram2ids[bigram]
+        for bigram in row_bigram:
+            if bigram in bigram2prob:
+                if label == "negative":
+                    bigram2prob[bigram][0] += 1
+                    negative += 1
+                elif label == "neutral":
+                    bigram2prob[bigram][1] += 1
+                    neutral += 1
+                elif label == "positive":
+                    bigram2prob[bigram][2] += 1
+                    positive += 1
             else:
-                x[ix] = 0
-        test_set_ids.append(x)
+                if label == "negative":
+                    bigram2prob[bigram] = np.array([1,0,0])
+                    negative += 1
+                elif label == "neutral":
+                    bigram2prob[bigram] = np.array([0,1,0])
+                    neutral += 1
+                elif label == "positive":
+                    bigram2prob[bigram] = np.array([0,0,1])
+                    positive += 1
 
-    x_test_matrix = np.array(test_set_ids)/len(bigram2ids)
-    y_test_matrix = np.array(test_set_labels)
+    class_freqency = np.array([negative,neutral,positive])
+    for bigram, probs in bigram2prob.items():
+        if sum(probs) != 0:
+            bigram2prob[bigram] = bigram2prob[bigram]/class_freqency
+            bigram2prob[bigram] =  bigram2prob[bigram]/sum(bigram2prob[bigram])
+    
+    pickle.dump(bigram2prob, open("cache/bigram2prob.dat", "wb"))
+    return bigram2prob
 
-    x_test_matrix.dump("cache/test_data_bi.txt")
-    y_test_matrix.dump("cache/test_label_bi.txt")
+def tweet_orgnize_word2prob_matrix(file_path, feature_len, is_train = True):
+    word2prob = pickle.load(open("cache/word2prob.dat", "rb"))
+    training_set_file = open(file_path, "r", encoding='UTF-8')
+    x_train_matrix = []
+    y_train_matrix = []
+    index_set = []
+    for line in training_set_file:
+        line_data = line.split('\t')
+        index = line_data[0]
+        label = line_data[1]
+        tw_text = line_data[2]
+        row_tokens = tweet_preprocessing(tw_text)
+        count = 0
+        prob_matrix = []
+        index_set.append(index)
+        for token in row_tokens:
+            if token in word2prob:
+                prob_matrix.append(word2prob[token])
+            else:
+                prob_matrix.append(np.array([1.0/3,1.0/3,1.0/3]))
+            count+=1
 
-    return index_set
+        for i in range(count,feature_len):
+            prob_matrix.append(np.array([0,0,0]))
+        
+        x_train_row = np.array(prob_matrix)
+        x_train_row = x_train_row.T.reshape((feature_len*3, )).T
+        x_train_matrix.append(x_train_row)
+        
+        if label == "negative":
+            y_train_matrix.append([1,0,0])
+        elif label == "neutral":
+            y_train_matrix.append([0,1,0])
+        elif label == "positive":
+            y_train_matrix.append([0,0,1])
 
+    x_train_matrix = np.array(x_train_matrix)
+    y_train_matrix = np.array(y_train_matrix)
 
+    if is_train:
+        x_train_matrix.dump("cache/train_data_uni.txt")
+        y_train_matrix.dump("cache/train_label_uni.txt")
+    else:
+        return index_set, x_train_matrix, y_train_matrix
+
+def tweet_orgnize_bigram2prob_matrix(file_path, feature_len,is_train = True):
+    bigram2prob = pickle.load(open("cache/bigram2prob.dat", "rb"))
+    training_set_file = open(file_path, "r", encoding='UTF-8')
+    x_train_matrix = []
+    y_train_matrix = []
+    index_set = []
+    for line in training_set_file:
+        line_data = line.split('\t')
+        index = line_data[0]
+        label = line_data[1]
+        tw_text = line_data[2]
+        row_tokens = tweet_preprocessing(tw_text)
+        row_bigram = bigrams(row_tokens)
+        count = 0
+        prob_matrix = []
+        index_set.append(index)
+        for bigram in row_bigram:
+            if bigram in bigram2prob:
+                prob_matrix.append(bigram2prob[bigram])
+            else:
+                prob_matrix.append(np.array([1.0/3,1.0/3,1.0/3]))
+            count+=1
+        for i in range(count,feature_len):
+            prob_matrix.append(np.array([0,0,0]))
+        
+        x_train_row = np.array(prob_matrix)
+        x_train_row = x_train_row.T.reshape((feature_len*3, )).T
+        x_train_matrix.append(x_train_row)
+        
+        if label == "negative":
+            y_train_matrix.append([1,0,0])
+        elif label == "neutral":
+            y_train_matrix.append([0,1,0])
+        elif label == "positive":
+            y_train_matrix.append([0,0,1])
+
+    x_train_matrix = np.array(x_train_matrix)
+    y_train_matrix = np.array(y_train_matrix)
+
+    if is_train:
+        x_train_matrix.dump("cache/train_data_bi.txt")
+        y_train_matrix.dump("cache/train_label_bi.txt")
+    else:
+        return index_set, x_train_matrix, y_train_matrix
+
+# if __name__ == '__main__':
+#     bigram2prob = pickle.load(open("cache/bigram2prob.dat", "rb"))
+#     for k,v in bigram2prob.items():
+#         print(k,v)

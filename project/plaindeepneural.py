@@ -344,7 +344,7 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 30
         if print_cost and i % 100 == 0:
             costs.append(cost)
 
-        if i%100 == 0 and i>100 and abs(costs[int(i/100)-1] - cost) <= 0.001: #Avoid overfitting
+        if i%100 == 0 and i>100 and abs(costs[int(i/100)-1] - cost) <= 0.01: #Avoid overfitting
             break
             
     # plot the cost
