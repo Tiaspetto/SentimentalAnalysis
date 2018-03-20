@@ -9,7 +9,6 @@ from plaindeepneural import *
 import numpy as np
 from sentence_label import *
 from LSTMKeras import *
-import gensim
 from keras.models import load_model
 # TODO: load training data
 """
@@ -26,7 +25,7 @@ if not os.path.exists("cache/train_data_uni.txt") or not os.path.exists("cache/t
 if not os.path.exists("cache/train_data_bi.txt") or not os.path.exists("cache/train_label_bi.txt"):
     tweet_bigram2prob(train_path)
     tweet_orgnize_bigram2prob_matrix(train_path, 140)
-
+print("Loading glove twitter data word2vec, please waite few second...")
 word_to_index, index_to_word, word_to_vec_map = read_glove_vecs('semeval-tweets/glove.twitter.27B.50d.txt')
 
 # You may rename the names of the classifiers to something more descriptive

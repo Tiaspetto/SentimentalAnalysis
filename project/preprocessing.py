@@ -7,9 +7,7 @@ import math
 import re
 from nltk.corpus import stopwords as StopwordsLoader
 from textblob import Word, TextBlob
-
 import pickle
-from tempfile import TemporaryFile
 
 from nltk import bigrams
 
@@ -197,6 +195,7 @@ def test_tweet_textarray_preprocessing(file_path):
 
 
 def tweet_word2prob(file_path):
+    print("Start generate word2prob plz waite few minute")
     training_set_file = open(file_path, "r", encoding='UTF-8')
     word2prob = {}
     negative = 0
@@ -240,6 +239,7 @@ def tweet_word2prob(file_path):
     return word2prob
 
 def tweet_bigram2prob(file_path):
+    print("Start generate bigram2prob plz waite few minute")
     training_set_file = open(file_path, "r", encoding='UTF-8')
     bigram2prob = {}
     negative = 0
@@ -283,6 +283,7 @@ def tweet_bigram2prob(file_path):
     return bigram2prob
 
 def tweet_orgnize_word2prob_matrix(file_path, feature_len, is_train = True):
+    print("Start generate uingram matrix plz waite few minute")
     word2prob = pickle.load(open("cache/word2prob.dat", "rb"))
     training_set_file = open(file_path, "r", encoding='UTF-8')
     x_train_matrix = []
@@ -328,6 +329,7 @@ def tweet_orgnize_word2prob_matrix(file_path, feature_len, is_train = True):
         return index_set, x_train_matrix, y_train_matrix
 
 def tweet_orgnize_bigram2prob_matrix(file_path, feature_len,is_train = True):
+    print("Start generate bigram matrix plz waite few minute")
     bigram2prob = pickle.load(open("cache/bigram2prob.dat", "rb"))
     training_set_file = open(file_path, "r", encoding='UTF-8')
     x_train_matrix = []
