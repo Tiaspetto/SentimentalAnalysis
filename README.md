@@ -8,10 +8,15 @@ Q: How to run this code?
 A: This project is developed based on python 3.6.4. Several package has been used to tackle certain task: Here is a table listing the package need to be installed before running code.
 
 pickle		Can be installed by pip or Anaconda
+
 numpy		Can be installed by pip or Anaconda
+
 keras		A learning framework can be easily installed in Anaconda, tensoflow required.
+
 matplotlib	Can be installed by pip or Anaconda 
+
 nltk		Need bigrams, stopwords etc 
+
 textblob	Can be install by pip
 
 After installed all this package, a pre-trained word2Vect Glove.twitter.27B.50. required to be put in to semeval-tweets folder. 
